@@ -1,4 +1,4 @@
-# modelbench
+# ModelBench
 
 Ask every question in a question bank to a local model served over an
 OpenAI-compatible API — [LM Studio](https://lmstudio.ai/), [Ollama](https://ollama.com/),

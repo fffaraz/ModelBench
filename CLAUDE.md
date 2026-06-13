@@ -1,0 +1,91 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## What this is
+
+ModelBench asks every question in a local question bank to a model served over an
+OpenAI-compatible API (LM Studio, Ollama, …) and reports pass/fail per question. It is
+**pure Python standard library** — there is nothing to install and no build step. The whole
+tool is one file, `bench.py`. The user-facing docs in `README.md` are the source of truth for
+end-user behavior; this file covers what you need to change the code or the bank.
+
+## Commands
+
+```bash
+python3 bench.py                      # run the whole bank (default subcommand is `run`)
+python3 bench.py --filter code        # only questions whose id contains, or category equals, "code"
+python3 bench.py --model my-model     # force a model id instead of auto-detecting
+python3 bench.py list                 # list discovered questions + their verify script
+python3 bench.py models               # show models the configured server reports
+```
+
+`bench.py` exits 0 only if every run question passed, 1 if any failed (so it doubles as a CI
+check). Running anything requires a live OpenAI-compatible server at `base_url` in `config.json`
+with a model loaded — there is no mock/offline mode.
+
+Test a single verify script in isolation, no model or server needed (the model's answer is the
+verify script's stdin):
+
+```bash
+printf 'Paris\n' | bash questions/0001-capital/verify.sh ; echo $?   # 0 = pass
+```
+
+There is no test suite, linter, or formatter configured in this repo.
+
+## Architecture
+
+One pipeline in `bench.py`, run per question by `cmd_run`:
+
+1. `load_config()` merges `config.json` over `DEFAULT_CONFIG` (defaults live in code, not the
+   JSON file — keep the two in sync when adding a config key).
+2. `detect_model()` picks `--model` / config `model`, else auto-picks the first model the
+   server lists. **Caveat that drives real behavior:** LM Studio reports the *loaded* model
+   (auto-pick is right); Ollama reports *all installed* models (auto-pick is arbitrary).
+3. `discover_questions()` scans `questions/*/`. A directory is a question **iff it contains
+   `prompt.txt`**; `meta.json` is optional.
+4. `ask()` POSTs to `/v1/chat/completions` with `stream: false` using stdlib `urllib` only.
+5. `run_verify()` executes the question's verify script and turns its exit code into pass/fail.
+6. `save_results()` writes a per-run JSON to `results/` (gitignored), named
+   `{model}__{timestamp}.json`.
+
+### The verify-script contract (the core extension point)
+
+`find_verify()` resolves the verify command in this precedence order:
+`meta.json` `"verify"` string (run via shell) → `verify.sh` (bash) → `verify.py`
+(current interpreter) → executable `verify`. First match wins.
+
+When `run_verify()` runs it:
+- **cwd = the question's own directory**, so support files (`expected.txt`,
+  `expected_output.txt`, a `Dockerfile`) resolve relatively.
+- the model's answer is passed **only on stdin** — not as an argument or file.
+- env vars `MODELBENCH_MODEL`, `MODELBENCH_QID`, `MODELBENCH_QDIR` are exported.
+- **exit 0 = pass**, non-zero = fail.
+- optional partial credit: print `SCORE=<float 0..1>` to stdout (`parse_score()` reads the
+  last such line; an explicit SCORE overrides the exit code's implied 1.0/0.0).
+- stdout+stderr is captured and shown on failure, so verify scripts should print *why* they
+  failed.
+
+### `questions/` conventions
+
+- **ID = directory name**, and the numeric prefix encodes the category by hundreds block:
+  `0000s` knowledge, `0100s` code, `0200s` math, `0300s` reasoning, `0400s`
+  instruction-following. `meta.json`'s `"category"` should match the block. Keep new
+  questions in the right range and set `category` to match.
+- Two reusable verify patterns already exist — copy rather than reinvent:
+  - **string/regex match** (knowledge/math): see `questions/0001-capital/verify.sh`
+    (normalize-then-compare against `expected.txt`).
+  - **run generated code and diff stdout** (code): see `questions/0100-fizzbuzz-python/verify.py`
+    (Python) and `questions/0104-fizzbuzz-c/verify.py` (compile + run C), both extracting a
+    fenced ```` ```code``` ```` block then comparing to `expected_output.txt`.
+- `meta.json` (all optional): `category`, `system`, `temperature`, `max_tokens`,
+  `verify_timeout`, and a `verify` command override. Per-question values override `config.json`.
+
+### Adding or changing things
+
+- **New question:** make `questions/NNNN-name/`, add `prompt.txt`, add a verify script that
+  exits 0 on a correct answer (copy the closest existing pattern), add any `expected*.txt`,
+  and a `meta.json` with the matching `category`.
+- Code-running verify scripts execute model output on the host. Existing ones use temp files
+  and tight `subprocess` timeouts; keep that, and prefer Docker (a `Dockerfile` in the question
+  dir is in the verify cwd) when running untrusted output is a concern.
