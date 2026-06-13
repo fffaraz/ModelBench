@@ -40,7 +40,7 @@ Example output:
 modelbench — model: qwen2.5-7b-instruct
 questions: 3
 
-PASS  0001-capital-france
+PASS  0001-capital
 PASS  0100-fizzbuzz-python
 FAIL  0200-add-numbers   (program output did not match expected.)
 
@@ -58,7 +58,7 @@ Each question is a folder under `questions/`. The only required file is `prompt.
 the model) plus a **verify script** that decides pass/fail.
 
 ```
-questions/0001-capital-france/
+questions/0001-capital/
   prompt.txt        # sent to the model
   verify.sh         # exit 0 = pass
   expected.txt      # whatever the verify script needs (optional)
@@ -84,7 +84,7 @@ When the script runs:
 You can test a verify script on its own, no model needed:
 
 ```bash
-echo "The capital is Paris." | bash questions/0001-capital-france/verify.sh
+printf 'Paris\nTokyo\nOttawa\nCairo\nCanberra\n' | bash questions/0001-capital/verify.sh
 echo $?   # 0 = pass
 ```
 
