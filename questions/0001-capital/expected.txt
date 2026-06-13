@@ -3,3 +3,14 @@ Tokyo
 Ottawa
 Cairo
 Canberra
+Madrid
+Berlin
+Nairobi
+Tehran
+New Delhi
+Mexico City
+Oslo
+Bangkok
+Buenos Aires
+Warsaw
+Seoul
