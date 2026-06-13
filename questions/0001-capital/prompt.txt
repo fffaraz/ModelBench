@@ -1,0 +1,11 @@
+Below is a list of countries. For each one, give its capital city.
+
+Reply with exactly one capital per line, in the same order as the countries
+below. Output only the capital names — no numbering, no country names, no extra
+text.
+
+France
+Japan
+Canada
+Egypt
+Australia
