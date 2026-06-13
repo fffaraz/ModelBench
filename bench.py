@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""modelbench — ask every question in the bank to a local model and report pass/fail.
+"""ModelBench — ask every question in the bank to a local model and report pass/fail.
 
 Talks to any OpenAI-compatible server (LM Studio, Ollama, …). Single model:
 picks --model / config, or auto-detects one the server reports, sends each
@@ -240,12 +240,14 @@ def cmd_run(args):
     if not questions:
         sys.exit("error: no questions matched.")
 
-    print(f"modelbench — model: {color(model, 'bold')}")
+    print(f"ModelBench — model: {color(model, 'bold')}")
     print(f"questions: {len(questions)}\n")
 
     results = []
+    total_start = time.time()
     for q in questions:
         meta = q["meta"]
+        q_start = time.time()
         try:
             answer, latency = ask(
                 cfg, model, q["prompt"],
@@ -257,19 +259,23 @@ def cmd_run(args):
         except Exception as e:  # network / API / malformed response
             answer, latency = "", 0.0
             res = {"passed": False, "exit": None, "score": 0.0, "output": f"model error: {e}"}
+        elapsed = time.time() - q_start
 
-        results.append({"id": q["id"], "latency": round(latency, 2), "answer": answer, **res})
+        results.append({"id": q["id"], "latency": round(latency, 2),
+                        "elapsed": round(elapsed, 2), "answer": answer, **res})
         mark = color("PASS", "green") if res["passed"] else color("FAIL", "red")
-        line = f"{mark}  {q['id']}"
+        line = f"{mark}  {q['id']}" + color(f"  ({elapsed:.2f}s)", "dim")
         if not res["passed"] and res["output"]:
             line += color(f"   ({short(res['output'])})", "dim")
         print(line)
+    total_elapsed = time.time() - total_start
 
     failed = [r["id"] for r in results if not r["passed"]]
     npass = len(results) - len(failed)
     print()
     summary = f"{npass}/{len(results)} passed"
     print(color(summary, "green" if not failed else "red"))
+    print(color(f"total time: {total_elapsed:.2f}s", "dim"))
     if failed:
         print("failed: " + ", ".join(failed))
     path = save_results(model, results)

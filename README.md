@@ -32,7 +32,7 @@ python3 bench.py list              # list discovered questions
 python3 bench.py models            # show the model(s) the server reports
 ```
 
-> **Model auto-detection caveat:** with `model: null`, modelbench picks the first model the
+> **Model auto-detection caveat:** with `model: null`, ModelBench picks the first model the
 > server reports. LM Studio reports the model it currently has *loaded*, so that's usually the
 > one you want. Ollama reports *every installed* model, so the auto-pick is arbitrary — pass
 > `--model` (or set it in `config.json`) to choose. Ollama also cold-loads a model on the first
@@ -41,7 +41,7 @@ python3 bench.py models            # show the model(s) the server reports
 Example output:
 
 ```
-modelbench — model: qwen2.5-7b-instruct
+ModelBench — model: nvidia/nemotron-3-nano-4b
 questions: 4
 
 PASS  0001-capital
@@ -51,7 +51,7 @@ FAIL  0200-add-numbers   (program output did not match expected.)
 
 2/4 passed
 failed: 0002-tiananmen, 0200-add-numbers
-details: results/qwen2.5-7b-instruct__20260612-143000.json
+details: results/nvidia_nemotron-3-nano-4b__20260613-161407.json
 ```
 
 `bench.py` exits 0 if everything passed, 1 if anything failed. Full answers and verify output
