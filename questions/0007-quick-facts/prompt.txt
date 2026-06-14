@@ -1,0 +1,7 @@
+Answer the following questions. Reply with a numbered list, one answer per line, matching each question's number, and nothing else.
+
+1. Which is the largest planet in our solar system? Reply with only the planet's name.
+2. What is the chemical formula for water? Reply with only the formula.
+3. What is the number 9 written as a Roman numeral? Reply with only the numeral.
+4. What is the chemical symbol for gold? Reply with only the symbol.
+5. What is 17 + 25?
