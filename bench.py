@@ -12,12 +12,12 @@ Point it at your server with "base_url" in config.json (default is LM Studio's
 http://localhost:1234/v1; use http://localhost:11434/v1 for Ollama).
 
 Usage:
-    python3 bench.py                       # run the whole question bank
-    python3 bench.py --filter code         # only questions whose id contains, or category equals, "code"
-    python3 bench.py --model my-model      # force a model id instead of auto-detecting
+    python3 bench.py                          # run the whole question bank
+    python3 bench.py --filter code            # only questions whose id contains, or category equals, "code"
+    python3 bench.py --model my-model         # force a model id instead of auto-detecting
     python3 bench.py --config ./config2.json  # use an alternate config file
-    python3 bench.py list                  # list discovered questions
-    python3 bench.py models                # show the model(s) the server reports
+    python3 bench.py list                     # list discovered questions
+    python3 bench.py models                   # show the model(s) the server reports
 
 Exit code: 0 if every question passed, 1 if any failed (handy for CI).
 """
