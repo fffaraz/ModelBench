@@ -97,7 +97,8 @@ model's answer, runs it (compiling first for C), and diffs its stdout against
 ### The verify-script contract
 
 For non-code questions, the harness sends the prompt, then runs the question's verify script
-(`verify.sh`, `verify.py`, or an executable `verify`; auto-detected). The script decides
+(`verify.sh`, else `verify.py`). The script is run directly, so it must
+be executable (`chmod +x`) with a proper shebang. The script decides
 everything — string match, regex, or extract code and run it (inside Docker or not) and diff an
 expected-output file.
 
@@ -144,7 +145,8 @@ runs the answer.
      its stdout. See `questions/0100-fizzbuzz-python/` (Python) or `questions/0104-fizzbuzz-c/`
      (C).
    - **Anything else:** write a `verify.sh` or `verify.py` that exits 0 on a correct answer
-     (the model's answer arrives on stdin). It's free to run code inside Docker (any
+     (the model's answer arrives on stdin); make it executable (`chmod +x`) with a shebang. It's
+     free to run code inside Docker (any
      `Dockerfile` in the question folder is in the cwd).
 
 ## Configuration

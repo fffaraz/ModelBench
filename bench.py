@@ -159,18 +159,19 @@ def find_verify(d, meta):
     """Locate the question's verify command. Returns {'cmd', 'shell', 'label'} or None.
 
     Precedence:
-      1. if the question has its own verify script, use it — a verify.sh / verify.py /
-         executable verify in the question dir.
+      1. if the question has its own verify script, use it — verify.sh, else verify.py, in the
+         question dir. The script is run directly, so it must be executable with a proper
+         shebang (e.g. #!/usr/bin/env bash or #!/usr/bin/env python3).
       2. otherwise, if the category is "code", check it with the shared check_code.py (run the
          model's code, diff its stdout against expected_output.txt; language from meta.json
          "lang", default "python"). If the question dir has an input.txt, it's fed to the
          program on stdin.
       3. otherwise there's no way to verify the question -> None (a configuration error).
     """
-    for name, prefix in (("verify.sh", ["bash"]), ("verify.py", [sys.executable]), ("verify", [])):
+    for name in ("verify.sh", "verify.py"):
         p = d / name
         if p.exists():
-            return {"cmd": prefix + [str(p)], "shell": False, "label": name}
+            return {"cmd": [str(p)], "shell": False, "label": name}
     if meta.get("category") == "code":
         lang = meta.get("lang", "python")
         cmd = [sys.executable, str(CHECK_CODE), lang, str(d / "expected_output.txt")]

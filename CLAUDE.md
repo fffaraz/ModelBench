@@ -52,10 +52,11 @@ One pipeline in `bench.py`, run per question by `cmd_run`:
 ### The verify-script contract (the core extension point)
 
 `find_verify()` resolves the verify command in this precedence order:
-**a per-question verify script if one exists** (`verify.sh` (bash) → `verify.py` (current
-interpreter) → executable `verify`, first match wins) → **else `category == "code"` → the
-shared `check_code.py`** → **else `None`, a configuration error** (a non-code question with no
-verify script can't be checked).
+**a per-question verify script if one exists** (`verify.sh`, else `verify.py`) → **else
+`category == "code"` → the shared `check_code.py`** → **else `None`, a
+configuration error** (a non-code question with no verify script can't be checked). A verify
+script is run **directly** (no interpreter prefix), so it must be executable (`chmod +x`)
+with a proper shebang — `#!/usr/bin/env bash`, `#!/usr/bin/env python3`, etc.
 
 **Code questions don't need their own verify script — the shared `check_code.py` at the repo
 root checks them.** When a `"code"` question has no verify script of its own, `find_verify()`
@@ -100,7 +101,8 @@ When `run_verify()` runs it:
 - **New question:** make `questions/NNNN-name/`, add `prompt.txt` and a `meta.json` with the
   matching `category`. For a `code` question, also add `expected_output.txt` and set `lang`
   — no verify script. For other categories, add a verify script that exits 0 on a correct
-  answer (copy the closest existing pattern) plus any `expected*.txt`.
+  answer (copy the closest existing pattern) plus any `expected*.txt`; make it executable
+  (`chmod +x`) with a shebang, since it's run directly.
 - `check_code.py` executes model output on the host. It uses temp files and tight
   `subprocess` timeouts; keep that, and prefer Docker (a `Dockerfile` in the question dir is
   in the verify cwd) when running untrusted output is a concern.
