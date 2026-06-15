@@ -163,7 +163,8 @@ def find_verify(d, meta):
          executable verify in the question dir.
       2. otherwise, if the category is "code", check it with the shared check_code.py (run the
          model's code, diff its stdout against expected_output.txt; language from meta.json
-         "lang", default "python").
+         "lang", default "python"). If the question dir has an input.txt, it's fed to the
+         program on stdin.
       3. otherwise there's no way to verify the question -> None (a configuration error).
     """
     for name, prefix in (("verify.sh", ["bash"]), ("verify.py", [sys.executable]), ("verify", [])):
@@ -172,12 +173,10 @@ def find_verify(d, meta):
             return {"cmd": prefix + [str(p)], "shell": False, "label": name}
     if meta.get("category") == "code":
         lang = meta.get("lang", "python")
-        expected = d / "expected_output.txt"
-        return {
-            "cmd": [sys.executable, str(CHECK_CODE), lang, str(expected)],
-            "shell": False,
-            "label": f"check_code.py {lang}",
-        }
+        cmd = [sys.executable, str(CHECK_CODE), lang, str(d / "expected_output.txt")]
+        if (d / "input.txt").exists():
+            cmd.append(str(d / "input.txt"))
+        return {"cmd": cmd, "shell": False, "label": f"check_code.py {lang}"}
     return None
 
 

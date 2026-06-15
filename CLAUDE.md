@@ -59,12 +59,14 @@ verify script can't be checked).
 
 **Code questions don't need their own verify script — the shared `check_code.py` at the repo
 root checks them.** When a `"code"` question has no verify script of its own, `find_verify()`
-auto-builds `python3 check_code.py <lang> expected_output.txt`. `<lang>` comes from
-`meta.json` `"lang"` (default `"python"`; `"c"` is the only other supported value for now).
-The script extracts a fenced code block from the model's answer, runs it (compiling first
-for C), and diffs its stdout against `expected_output.txt`. Add a language by extending the
-`LANGS` table in `check_code.py`. (A code question may still ship its own verify script to
-override this — per the precedence above, an existing script wins.)
+auto-builds `python3 check_code.py <lang> expected_output.txt [input.txt]`. `<lang>` comes
+from `meta.json` `"lang"` (default `"python"`; `"c"` is the only other supported value for
+now). The script extracts a fenced code block from the model's answer, runs it (compiling
+first for C), and diffs its stdout against `expected_output.txt`. If the question dir has an
+`input.txt`, its contents are fed to the program on stdin (the optional third arg); otherwise
+the program gets no stdin. Add a language by extending the `LANGS` table in `check_code.py`.
+(A code question may still ship its own verify script to override this — per the precedence
+above, an existing script wins.)
 
 When `run_verify()` runs it:
 - **cwd = the question's own directory**, so support files (`expected.txt`,

@@ -2,12 +2,14 @@
 """Shared verifier for coding questions: pull the code out of the model's answer (read on
 stdin), run it, and compare its stdout to an expected-output file. exit 0 = pass, non-zero = fail.
 
-Usage (typically from a question's meta.json "verify"):
-    python3 ../../check_code.py <lang> <expected_output_path>
+Usage:
+    python3 ../../check_code.py <lang> <expected_output_path> [input_path]
 
-<lang> is "python" (aka "py") or "c". The expected-output path is resolved relative to the
-verify cwd, which bench.py sets to the question's own directory -- so "expected_output.txt"
-finds the file sitting next to prompt.txt.
+<lang> is "python" (aka "py") or "c". The expected-output path (and the optional input path)
+are resolved relative to the verify cwd, which bench.py sets to the question's own directory
+-- so "expected_output.txt" finds the file sitting next to prompt.txt. When [input_path] is
+given, its contents are fed to the generated program on stdin; otherwise the program gets no
+stdin.
 """
 import os
 import re
@@ -26,22 +28,25 @@ def extract_code(answer, fence):
     return m.group(1) if m else answer
 
 
-def run_python(code):
-    """Write the code to a temp file and run it. Returns a CompletedProcess."""
+def run_python(code, stdin_data):
+    """Write the code to a temp file and run it, feeding stdin_data on stdin (None = no input).
+    Returns a CompletedProcess."""
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
         f.write(code)
         code_path = f.name
     try:
         return subprocess.run(
-            [sys.executable, code_path], capture_output=True, text=True, timeout=RUN_TIMEOUT
+            [sys.executable, code_path], input=stdin_data,
+            capture_output=True, text=True, timeout=RUN_TIMEOUT
         )
     finally:
         os.unlink(code_path)
 
 
-def run_c(code):
-    """Compile the code, then run the binary. Returns a CompletedProcess, or exits on a
-    compile error / missing compiler (those are failures, not runnable programs)."""
+def run_c(code, stdin_data):
+    """Compile the code, then run the binary, feeding stdin_data on stdin (None = no input).
+    Returns a CompletedProcess, or exits on a compile error / missing compiler (those are
+    failures, not runnable programs)."""
     cc = shutil.which("cc") or shutil.which("gcc") or shutil.which("clang")
     if cc is None:
         print("no C compiler (cc/gcc/clang) found on PATH", file=sys.stderr)
@@ -60,7 +65,9 @@ def run_c(code):
             print("the generated program failed to compile:", build.returncode, file=sys.stderr)
             print(build.stderr, file=sys.stderr)
             sys.exit(1)
-        return subprocess.run([bin_path], capture_output=True, text=True, timeout=RUN_TIMEOUT)
+        return subprocess.run(
+            [bin_path], input=stdin_data, capture_output=True, text=True, timeout=RUN_TIMEOUT
+        )
     finally:
         shutil.rmtree(tmp, ignore_errors=True)
 
@@ -74,17 +81,23 @@ LANGS = {
 
 
 def main():
-    if len(sys.argv) != 3:
-        print(f"usage: {sys.argv[0]} <lang> <expected_output_path>", file=sys.stderr)
+    if not 3 <= len(sys.argv) <= 4:
+        print(f"usage: {sys.argv[0]} <lang> <expected_output_path> [input_path]", file=sys.stderr)
         sys.exit(2)
     lang, expected_path = sys.argv[1].lower(), sys.argv[2]
+    input_path = sys.argv[3] if len(sys.argv) == 4 else None
     if lang not in LANGS:
         print(f"unsupported lang {lang!r}; supported: {', '.join(sorted(LANGS))}", file=sys.stderr)
         sys.exit(2)
 
+    stdin_data = None
+    if input_path is not None:
+        with open(input_path) as f:
+            stdin_data = f.read()
+
     fence, runner = LANGS[lang]
     code = extract_code(sys.stdin.read(), fence)
-    proc = runner(code)
+    proc = runner(code, stdin_data)
 
     if proc.returncode != 0:
         print("the generated program exited non-zero:", proc.returncode, file=sys.stderr)
