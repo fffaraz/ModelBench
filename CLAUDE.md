@@ -52,17 +52,19 @@ One pipeline in `bench.py`, run per question by `cmd_run`:
 ### The verify-script contract (the core extension point)
 
 `find_verify()` resolves the verify command in this precedence order:
-`meta.json` `"verify"` string (run via shell) → **`category == "code"` → the shared
-`check_code.py`** (no per-question script; see below) → `verify.sh` (bash) → `verify.py`
-(current interpreter) → executable `verify`. First match wins.
+**a per-question verify script if one exists** (`verify.sh` (bash) → `verify.py` (current
+interpreter) → executable `verify`, first match wins) → **else `category == "code"` → the
+shared `check_code.py`** → **else `None`, a configuration error** (a non-code question with no
+verify script can't be checked).
 
-**Code questions are verified by the shared `check_code.py` at the repo root — they do not
-ship their own verify script.** When a question's `category` is `"code"`, `find_verify()`
+**Code questions don't need their own verify script — the shared `check_code.py` at the repo
+root checks them.** When a `"code"` question has no verify script of its own, `find_verify()`
 auto-builds `python3 check_code.py <lang> expected_output.txt`. `<lang>` comes from
 `meta.json` `"lang"` (default `"python"`; `"c"` is the only other supported value for now).
 The script extracts a fenced code block from the model's answer, runs it (compiling first
 for C), and diffs its stdout against `expected_output.txt`. Add a language by extending the
-`LANGS` table in `check_code.py`.
+`LANGS` table in `check_code.py`. (A code question may still ship its own verify script to
+override this — per the precedence above, an existing script wins.)
 
 When `run_verify()` runs it:
 - **cwd = the question's own directory**, so support files (`expected.txt`,
@@ -88,8 +90,8 @@ When `run_verify()` runs it:
     code question needs no verify script — just `category: "code"`, the right `lang`, and an
     `expected_output.txt`.
 - `meta.json` (all optional): `category`, `lang` (for `code` questions: `python`/`c`),
-  `system`, `temperature`, `max_tokens`, `verify_timeout`, and a `verify` command override.
-  Per-question values override `config.json`.
+  `system`, `temperature`, `max_tokens`, `verify_timeout`. Per-question values override
+  `config.json`.
 
 ### Adding or changing things
 

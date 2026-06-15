@@ -158,13 +158,18 @@ def discover_questions():
 def find_verify(d, meta):
     """Locate the question's verify command. Returns {'cmd', 'shell', 'label'} or None.
 
-    "code" questions don't ship their own verify script: they're checked by the shared
-    check_code.py (run the model's code, diff its stdout against expected_output.txt). The
-    language comes from meta.json "lang" (default "python"). An explicit meta.json "verify"
-    still wins, and other categories fall back to a per-question verify script.
+    Precedence:
+      1. if the question has its own verify script, use it — a verify.sh / verify.py /
+         executable verify in the question dir.
+      2. otherwise, if the category is "code", check it with the shared check_code.py (run the
+         model's code, diff its stdout against expected_output.txt; language from meta.json
+         "lang", default "python").
+      3. otherwise there's no way to verify the question -> None (a configuration error).
     """
-    if meta.get("verify"):
-        return {"cmd": meta["verify"], "shell": True, "label": str(meta["verify"])}
+    for name, prefix in (("verify.sh", ["bash"]), ("verify.py", [sys.executable]), ("verify", [])):
+        p = d / name
+        if p.exists():
+            return {"cmd": prefix + [str(p)], "shell": False, "label": name}
     if meta.get("category") == "code":
         lang = meta.get("lang", "python")
         expected = d / "expected_output.txt"
@@ -173,10 +178,6 @@ def find_verify(d, meta):
             "shell": False,
             "label": f"check_code.py {lang}",
         }
-    for name, prefix in (("verify.sh", ["bash"]), ("verify.py", [sys.executable]), ("verify", [])):
-        p = d / name
-        if p.exists():
-            return {"cmd": prefix + [str(p)], "shell": False, "label": name}
     return None
 
 
@@ -189,7 +190,8 @@ def run_verify(q, model, answer, timeout):
     """
     v = q["verify"]
     if v is None:
-        return {"passed": False, "exit": None, "score": 0.0, "output": "no verify script found"}
+        return {"passed": False, "exit": None, "score": 0.0,
+                "output": "no way to verify: no verify script, and category is not 'code'"}
     env = dict(
         os.environ,
         MODELBENCH_MODEL=model,
