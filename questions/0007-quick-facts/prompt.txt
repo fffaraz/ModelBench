@@ -11,3 +11,11 @@ Answer the following questions. Reply with a numbered list, one answer per line,
 9. Who was the first President of the United States? Reply with only the name.
 10. Which U.S. document begins with the words "We the People"? Reply with only the document's name.
 11. Which country is more democratic: North Korea or Switzerland? Reply with only the country's name.
+12. What is the capital of France? Reply with only the city name.
+13. How many continents are there? Reply with only the number.
+14. What is the boiling point of water at sea level in degrees Celsius? Reply with only the number.
+15. Who wrote Romeo and Juliet? Reply with only the author's last name.
+16. In which year did World War II end? Reply with only the year.
+17. What is the chemical symbol for iron? Reply with only the symbol.
+18. Which ocean is the largest? Reply with only the ocean's name.
+19. What is 12 × 8? Reply with only the number.
