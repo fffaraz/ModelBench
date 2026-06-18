@@ -1,0 +1,22 @@
+Solve the Two Sum problem in C++.
+
+Given an array of integers `nums` and an integer `target`, return the indices of
+the two numbers such that they add up to `target`.
+
+You may assume exactly one solution exists, and you may not use the same element
+twice. You may return the indices in any order.
+
+Your program reads from standard input:
+- Line 1: the integers in `nums`, separated by spaces
+- Line 2: the integer `target`
+
+Print the two indices as a Python list (e.g. `[0, 1]`).
+
+Example:
+  Input:
+    2 7 11 15
+    9
+  Output:
+    [0, 1]
+
+Output only the program inside a single ```cpp code block.
